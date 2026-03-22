@@ -66,7 +66,6 @@ header {
   border-radius:20px;
 }
 
-/* START */
 #start-screen {
   display:flex;
   flex-direction:column;
@@ -94,7 +93,6 @@ header {
   border-radius:20px;
 }
 
-/* BUTTONS */
 .btn {
   display:inline-flex;
   align-items:center;
@@ -136,7 +134,6 @@ header {
   50%      { box-shadow:0 4px 28px rgba(255,107,138,.7); }
 }
 
-/* INTERVIEW */
 #interview-screen { display:none; }
 
 .progress-wrap { display:flex; align-items:center; gap:12px; margin-bottom:22px; }
@@ -153,7 +150,6 @@ header {
   align-items:start;
 }
 
-/* Interviewer panel */
 .iv-panel {
   background:var(--card);
   border:1px solid var(--border);
@@ -198,7 +194,6 @@ header {
 .iv-status { font-size:.7rem; font-family:'JetBrains Mono',monospace; color:var(--muted); text-align:center; min-height:15px; }
 .iv-status.sp { color:var(--teal); }
 
-/* Chat column */
 .chat-col { display:flex; flex-direction:column; gap:13px; }
 
 .msg {
@@ -230,7 +225,6 @@ header {
   border-radius:14px 14px 3px 14px;
 }
 
-/* Comment card */
 .comment-card {
   margin-left:38px;
   background:var(--comment-bg);
@@ -249,14 +243,12 @@ header {
   letter-spacing:.5px; margin-bottom:5px;
 }
 
-/* Typing */
 .typing-dots { display:flex; gap:4px; padding:2px 0; }
 .typing-dots span { width:6px; height:6px; background:var(--muted); border-radius:50%; animation:db .8s infinite; }
 .typing-dots span:nth-child(2) { animation-delay:.15s; }
 .typing-dots span:nth-child(3) { animation-delay:.3s; }
 @keyframes db { 0%,80%,100% { transform:translateY(0); } 40% { transform:translateY(-6px); } }
 
-/* Input row */
 .input-row {
   display:flex; gap:10px; align-items:center;
   background:var(--card); border:1px solid var(--border);
@@ -274,7 +266,6 @@ header {
 .mic-hint.err { color:var(--rose); }
 .input-locked { opacity:.4; pointer-events:none; }
 
-/* RESULT */
 #result-screen { display:none; }
 .result-top {
   display:flex; flex-direction:column; align-items:center;
@@ -323,7 +314,7 @@ header {
   <div class="role-badge">AI-DRIVEN TECHNICAL WRITING INTERN · REMOTE</div>
 </header>
 
-<!-- ═══ START ═══ -->
+<!-- START -->
 <div id="start-screen">
   <div>
     <div class="tags" style="margin-bottom:14px;">
@@ -344,7 +335,7 @@ header {
   <p style="font-size:.74rem;color:var(--muted);">Allow microphone when prompted · Chrome or Edge recommended for voice</p>
 </div>
 
-<!-- ═══ INTERVIEW ═══ -->
+<!-- INTERVIEW -->
 <div id="interview-screen">
   <div class="progress-wrap">
     <div class="steps" id="steps"></div>
@@ -402,7 +393,7 @@ header {
   </div>
 </div>
 
-<!-- ═══ RESULT ═══ -->
+<!-- RESULT -->
 <div id="result-screen">
   <div class="result-top">
     <div class="score-ring">
@@ -441,36 +432,90 @@ let recognition  = null;
 let isRecording  = false;
 const synth      = window.speechSynthesis;
 let femaleVoice  = null;
+let voicesReady  = false;
 
-// New random seed on every page load = different questions every time
 const SESSION_SEED = Date.now() + Math.floor(Math.random() * 99999);
 
-// ── VOICE ──────────────────────────────────────────────
-function loadVoices() {
+// ── VOICE LOADING — robust, waits until voices actually exist ──
+function pickFemaleVoice() {
   const voices = synth.getVoices();
-  const names = ['Samantha','Karen','Moira','Tessa','Fiona','Veena',
-    'Google UK English Female','Microsoft Zira','Microsoft Hazel',
-    'Nicky','Victoria'];
-  for (const n of names) {
+  if (!voices || voices.length === 0) return false;
+  const preferred = [
+    'Samantha','Karen','Moira','Tessa','Fiona','Veena',
+    'Google UK English Female','Microsoft Zira Desktop',
+    'Microsoft Hazel Desktop','Microsoft Zira','Microsoft Hazel',
+    'Nicky','Victoria','Allison','Ava','Susan','Joanna',
+    'Amy','Emma','Salli','Kendra','Kimberly','Ivy'
+  ];
+  for (const n of preferred) {
     const v = voices.find(v => v.name.includes(n));
-    if (v) { femaleVoice = v; return; }
+    if (v) { femaleVoice = v; voicesReady = true; return true; }
   }
-  femaleVoice = voices.find(v => v.lang.startsWith('en') &&
-    (v.name.toLowerCase().includes('female') || v.name.includes('f'))) ||
-    voices.find(v => v.lang.startsWith('en'));
-}
-synth.onvoiceschanged = loadVoices;
-loadVoices();
+  // Fallback: any English voice
+  const fallback = voices.find(v =>
+    v.lang.startsWith('en') &&
+    (v.name.toLowerCase().includes('female') ||
+     v.name.toLowerCase().includes('woman') ||
+     ['f','karen','sarah','lisa','anna'].some(k => v.name.toLowerCase().includes(k)))
+  ) || voices.find(v => v.lang.startsWith('en')) || voices[0];
 
+  if (fallback) { femaleVoice = fallback; voicesReady = true; return true; }
+  return false;
+}
+
+// Load voices immediately and on change event
+pickFemaleVoice();
+synth.onvoiceschanged = () => { pickFemaleVoice(); };
+
+// Robust wait-for-voices function
+function waitForVoices(cb, retries = 30) {
+  if (pickFemaleVoice()) { cb(); return; }
+  if (retries <= 0) { cb(); return; } // give up and proceed anyway
+  setTimeout(() => waitForVoices(cb, retries - 1), 150);
+}
+
+// ── SPEAK — reliable, handles all edge cases ──
 function speak(text, cb) {
+  // Cancel any ongoing speech
   synth.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  if (femaleVoice) u.voice = femaleVoice;
-  u.rate = 0.88; u.pitch = 1.2; u.volume = 1;
-  u.onstart = () => setSpeaking(true);
-  u.onend   = () => { setSpeaking(false); cb && cb(); };
-  u.onerror = () => { setSpeaking(false); cb && cb(); };
-  synth.speak(u);
+
+  // Small delay after cancel to avoid Chrome bug
+  setTimeout(() => {
+    const u = new SpeechSynthesisUtterance(text);
+
+    // Apply voice if available
+    if (femaleVoice) {
+      u.voice = femaleVoice;
+      u.lang  = femaleVoice.lang;
+    } else {
+      u.lang = 'en-US';
+    }
+
+    u.rate   = 0.88;
+    u.pitch  = 1.15;
+    u.volume = 1;
+
+    u.onstart = () => setSpeaking(true);
+
+    u.onend = () => {
+      setSpeaking(false);
+      if (cb) cb();
+    };
+
+    u.onerror = (e) => {
+      console.warn('Speech error:', e.error);
+      setSpeaking(false);
+      if (cb) cb();
+    };
+
+    synth.speak(u);
+
+    // Chrome sometimes stalls — nudge it
+    setTimeout(() => {
+      if (synth.paused) synth.resume();
+    }, 200);
+
+  }, 100);
 }
 
 let mouthTimer;
@@ -484,13 +529,13 @@ function setSpeaking(on) {
     st.textContent = 'Speaking…'; st.className = 'iv-status sp';
     let open = true;
     mouthTimer = setInterval(() => {
-      m.setAttribute('d', open ? 'M47,76 Q55,84 63,76' : 'M47,76 Q55,81 63,76');
+      if (m) m.setAttribute('d', open ? 'M47,76 Q55,84 63,76' : 'M47,76 Q55,81 63,76');
       open = !open;
     }, 155);
   } else {
     wrap.classList.remove('is-speaking');
     st.textContent = ''; st.className = 'iv-status';
-    m && m.setAttribute('d','M47,76 Q55,81 63,76');
+    if (m) m.setAttribute('d','M47,76 Q55,81 63,76');
   }
 }
 
@@ -537,7 +582,7 @@ function lockInput(l) {
 }
 function setHint(msg, cls='') {
   const e = document.getElementById('mic-hint');
-  e.textContent = msg; e.className = 'mic-hint '+cls;
+  if (e) { e.textContent = msg; e.className = 'mic-hint '+cls; }
 }
 function updateProgress() {
   const steps = document.getElementById('steps');
@@ -566,7 +611,6 @@ async function callClaude(system, userMsg, maxTok=350) {
   return (d.content?.[0]?.text||'').trim();
 }
 
-// ── SYSTEM PROMPT ──────────────────────────────────────
 function buildSystem() {
   return `You are Dr. Sarah Mensah, a warm but honest and professional female senior technical recruiter at GAO Tek Inc.
 You are conducting a 5-question interview for the AI-Driven Technical Writing Intern role (fully remote, 3–6 months).
@@ -577,25 +621,23 @@ CANDIDATE BACKGROUND:
 • Computer Science student passionate about AI and technical writing
 • Co-authored research paper on hydrometallurgy leaching optimization (RSM — Response Surface Methodology)
 • Used Elicit, Consensus, SciSpace for AI-powered academic research
-• Used Mendeley for Harvard-style referencing (in-text citations + bibliography)  
+• Used Mendeley for Harvard-style referencing (in-text citations + bibliography)
 • Built a truck logistics tracking system in HTML, CSS, JavaScript using Claude AI for coding help
 • Also uses: ChatGPT, Grammarly, Jupyter Notebook
 
-SESSION VARIATION KEY: ${SESSION_SEED} — use this to ensure this session asks distinctly different questions from other sessions, exploring different angles of the candidate's background and role fit.`;
+SESSION VARIATION KEY: ${SESSION_SEED} — use this to ensure this session asks distinctly different questions from other sessions.`;
 }
 
-// ── GET OPENING QUESTION ───────────────────────────────
 async function getOpener() {
   const system = buildSystem();
   const prompt = `Generate a warm, professional opening question for this interview.
 It should invite the candidate to introduce themselves, but vary the exact phrasing each session.
-Some sessions start with "tell me about yourself", others might open with "what brought you to apply for this role" or "walk me through your background" — vary it based on session key ${SESSION_SEED}.
-Keep it under 55 words. Return ONLY the spoken question text.`;
+Some sessions start with "tell me about yourself", others might open with "what brought you to apply for this role" or "walk me through your background".
+Keep it under 55 words. Return ONLY the spoken question text, no quotes.`;
   const q = await callClaude(system, prompt, 120);
-  return q || "Welcome! I'm so glad you could join us today. Could you start by telling me a bit about yourself and what drew you to apply for this AI Technical Writing Intern position at GAO Tek?";
+  return q || "Welcome, and thank you so much for joining me today. I'm really looking forward to our conversation. To get us started, could you tell me a little about yourself and what drew you to apply for this AI Technical Writing Intern position at GAO Tek?";
 }
 
-// ── GET COMMENT + NEXT QUESTION ────────────────────────
 async function getCommentAndNext(answer, qNum) {
   const history = conversation.map(m=>
     `${m.role==='iv'?'DR. SARAH':'CANDIDATE'}: ${m.text}`).join('\n');
@@ -610,14 +652,14 @@ CANDIDATE'S LATEST ANSWER TO QUESTION ${qNum+1}: "${answer}"
 ${isLast ? `This was the 5th and final question.
 Return JSON only:
 {
-  "comment": "2-3 sentences of specific, honest feedback on this answer. Mention what was good or clear, and what was vague or missing. Be direct but kind. Reference something they actually said.",
-  "closing": "A warm closing statement of 2-3 sentences thanking the candidate and briefly noting one or two things that stood out across the interview. Do not ask another question."
+  "comment": "2-3 sentences of specific, honest feedback on this answer.",
+  "closing": "A warm closing statement of 2-3 sentences thanking the candidate and noting one or two things that stood out. Do not ask another question."
 }` : `Return JSON only:
 {
-  "comment": "2-3 sentences of honest, specific feedback on this answer. If it was strong, say specifically why. If it was vague, unclear, or missing key details, say so directly but constructively. Always reference something they actually said.",
-  "nextQuestion": "Your next interview question (question ${qNum+2} of 5). MUST build naturally from what they said — pick up on a specific word, tool, or idea they mentioned. Progress naturally through topics not yet covered: their research paper details, specific AI tool usage, documentation/writing experience, what value they'll bring to GAO Tek. Never repeat a topic. Keep it under 55 words. Sound like a real human follow-up, not a generic question. Vary the style based on session key ${SESSION_SEED}."
+  "comment": "2-3 sentences of honest, specific feedback on this answer. Reference something they actually said.",
+  "nextQuestion": "Your next interview question (question ${qNum+2} of 5). Build naturally from what they said. Keep under 55 words."
 }
-IMPORTANT: The question must feel like a genuine follow-up to their specific answer, not a generic interview question.`}
+IMPORTANT: The question must feel like a genuine follow-up to their specific answer.`}
 Return ONLY valid JSON. No markdown.`;
 
   try {
@@ -626,19 +668,18 @@ Return ONLY valid JSON. No markdown.`;
     return JSON.parse(clean);
   } catch(e) {
     const fallbacks = [
-      "Could you tell me more about how you specifically used those AI research tools in the paper — what steps did you take?",
-      "You mentioned working with HTML and CSS — how comfortable are you producing written documentation for technical products you may not be fully familiar with?",
+      "Could you tell me more about how you specifically used those AI research tools — what steps did you take?",
+      "You mentioned working with HTML and CSS — how comfortable are you producing written documentation for technical products?",
       "Thinking about the GAO Tek role — what type of technical content do you feel most confident producing right now?",
       "How do you ensure that AI-generated content is accurate and professional before including it in a final document?"
     ];
     return {
-      comment: "Thank you for that. Try to be more specific — concrete examples of what you produced or what tools you used will make your answers much stronger in a real interview.",
+      comment: "Thank you for that. Try to be more specific — concrete examples will make your answers much stronger.",
       nextQuestion: isLast ? undefined : fallbacks[Math.min(qNum, fallbacks.length-1)]
     };
   }
 }
 
-// ── SCORE ───────────────────────────────────────────────
 async function generateScore() {
   const transcript = conversation.map(m=>
     `${m.role==='iv'?'DR. SARAH':'CANDIDATE'}: ${m.text}`).join('\n\n');
@@ -660,7 +701,7 @@ Return ONLY valid JSON (no markdown):
     "Confidence & Preparation": <0-100>
   },
   "grade": "<Strong Candidate | Promising Candidate | Needs More Preparation | Keep Practising>",
-  "feedback": "<3-4 sentences of specific, honest feedback referencing actual things said in the interview. What stood out? What should they improve? What would make them stronger for this exact role?>"
+  "feedback": "<3-4 sentences of specific, honest feedback referencing actual things said in the interview.>"
 }`;
 
   try {
@@ -673,7 +714,7 @@ Return ONLY valid JSON (no markdown):
       overall: Math.round(base),
       skills:{"Communication Clarity":Math.round(base-4),"AI Tool Awareness":Math.round(base+4),"Research Experience":Math.round(base),"Technical Writing":Math.round(base-6),"Role Understanding":Math.round(base-2),"Confidence & Preparation":Math.round(base-8)},
       grade:"Promising Candidate",
-      feedback:"You showed awareness of relevant AI tools and have good foundational experience. To improve, be more specific in your answers — name exact outputs, describe real situations, and connect your background directly to what the role needs."
+      feedback:"You showed awareness of relevant AI tools and have good foundational experience. To improve, be more specific — name exact outputs and connect your background directly to what the role needs."
     };
   }
 }
@@ -685,33 +726,36 @@ async function startInterview() {
 
   qIndex = 0; conversation = []; allAnswers = [];
 
-  // Reset chat col
   document.getElementById('chat-col').innerHTML = `
     <div class="input-row input-locked" id="input-row">
       <input id="txt" type="text" placeholder="Type your answer and press Enter…"
              onkeydown="if(event.key==='Enter')submitText()"/>
       <button class="btn-mic" id="mic-btn" onclick="toggleMic()">🎙</button>
     </div>
-    <div class="mic-hint" id="mic-hint">Please wait…</div>`;
+    <div class="mic-hint" id="mic-hint">Loading Dr. Sarah's voice…</div>`;
 
   lockInput(true);
   updateProgress();
-  addTyping();
 
-  const q = await getOpener();
-  removeTyping();
-  addBubble('iv', q);
-  conversation.push({role:'iv', text:q});
+  // ── KEY FIX: wait for voices before doing anything ──
+  waitForVoices(async () => {
+    addTyping();
+    const q = await getOpener();
+    removeTyping();
+    addBubble('iv', q);
+    conversation.push({role:'iv', text:q});
 
-  speak(q, () => {
-    lockInput(false);
-    setHint('Click 🎙 to speak — or type and press Enter');
+    // Speak the opening question out loud
+    speak(q, () => {
+      lockInput(false);
+      setHint('Click 🎙 to speak — or type and press Enter');
+    });
   });
 }
 
 async function processAnswer(answer) {
   lockInput(true);
-  setHint('Processing your answer…');
+  setHint('Dr. Sarah is thinking…');
   addBubble('user', answer);
   conversation.push({role:'user', text:answer});
   allAnswers.push(answer);
@@ -724,7 +768,6 @@ async function processAnswer(answer) {
   const result = await getCommentAndNext(answer, currentQ);
   removeTyping();
 
-  // Show comment first
   if (result.comment) {
     addComment(result.comment);
     await new Promise(r => setTimeout(r, 600));
@@ -755,7 +798,7 @@ function toggleMic() {
 }
 function startMic() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { setHint('Speech not available in this browser — please type.','err'); return; }
+  if (!SR) { setHint('Speech not available — please type your answer.','err'); return; }
   recognition = new SR();
   recognition.continuous = true; recognition.interimResults = true; recognition.lang='en-US';
   let final = '';
