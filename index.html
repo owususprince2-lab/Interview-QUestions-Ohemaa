@@ -3,908 +3,519 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GAO Tek — Interview Simulator</title>
+<title>GAO Tek — Interview Practice</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
-
-:root {
-  --bg: #080b12;
-  --surface: #0e1420;
-  --card: #131926;
-  --border: #1c2538;
-  --accent: #6c8fff;
-  --teal: #00d4aa;
-  --gold: #f0b429;
-  --rose: #ff6b8a;
-  --text: #dde4f0;
-  --muted: #5a6480;
-  --comment-bg: #0a1a14;
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-}
-
-body::before {
-  content:'';
-  position:fixed;
-  inset:0;
-  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(108,143,255,0.07), transparent);
-  pointer-events:none;
-  z-index:0;
-}
-
-.wrap {
-  position:relative;
-  z-index:1;
-  max-width:880px;
-  margin:0 auto;
-  padding:28px 18px 60px;
-}
-
-header {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-bottom:32px;
-  padding-bottom:16px;
-  border-bottom:1px solid var(--border);
-}
-.logo { font-family:'Fraunces',serif; font-size:1.4rem; color:var(--accent); }
-.logo span { color:var(--teal); }
-.role-badge {
-  font-family:'JetBrains Mono',monospace;
-  font-size:.66rem;
-  color:var(--muted);
-  border:1px solid var(--border);
-  padding:4px 12px;
-  border-radius:20px;
-}
-
-#start-screen {
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  text-align:center;
-  gap:20px;
-  padding:40px 0;
-}
-#start-screen h1 {
-  font-family:'Fraunces',serif;
-  font-size:2.5rem;
-  line-height:1.1;
-  font-weight:300;
-}
-#start-screen h1 em { color:var(--teal); font-style:italic; }
-#start-screen p { color:var(--muted); max-width:460px; line-height:1.7; font-size:.93rem; }
-.tags { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-.tag {
-  font-size:.72rem;
-  font-family:'JetBrains Mono',monospace;
-  background:rgba(108,143,255,.08);
-  color:var(--accent);
-  border:1px solid rgba(108,143,255,.2);
-  padding:4px 11px;
-  border-radius:20px;
-}
-
-.btn {
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding:12px 30px;
-  border-radius:8px;
-  border:none;
-  font-family:'DM Sans',sans-serif;
-  font-size:.93rem;
-  font-weight:600;
-  cursor:pointer;
-  transition:all .2s;
-}
-.btn-primary {
-  background:linear-gradient(135deg,var(--accent),#4a6aee);
-  color:#fff;
-  box-shadow:0 4px 20px rgba(108,143,255,.25);
-}
-.btn-primary:hover { transform:translateY(-2px); box-shadow:0 6px 28px rgba(108,143,255,.35); }
-.btn-ghost { background:transparent; color:var(--muted); border:1px solid var(--border); }
-.btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
-.btn-mic {
-  width:56px; height:56px; border-radius:50%; padding:0;
-  font-size:1.35rem;
-  justify-content:center;
-  background:linear-gradient(135deg,var(--teal),#009e80);
-  color:#000;
-  box-shadow:0 4px 16px rgba(0,212,170,.28);
-  border:none;
-  flex-shrink:0;
-  cursor:pointer;
-}
-.btn-mic.recording {
-  background:linear-gradient(135deg,var(--rose),#cc2244);
-  animation:mpulse 1.1s infinite;
-}
-@keyframes mpulse {
-  0%,100% { box-shadow:0 4px 16px rgba(255,107,138,.4); }
-  50%      { box-shadow:0 4px 28px rgba(255,107,138,.7); }
-}
-
-#interview-screen { display:none; }
-
-.progress-wrap { display:flex; align-items:center; gap:12px; margin-bottom:22px; }
-.steps { display:flex; gap:6px; flex:1; }
-.step { flex:1; height:5px; border-radius:4px; background:var(--border); transition:background .4s; }
-.step.done { background:var(--teal); }
-.step.active { background:var(--accent); }
-.prog-label { font-family:'JetBrains Mono',monospace; font-size:.74rem; color:var(--muted); white-space:nowrap; }
-
-.main-grid {
-  display:grid;
-  grid-template-columns:210px 1fr;
-  gap:18px;
-  align-items:start;
-}
-
-.iv-panel {
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:20px 14px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:11px;
-  position:sticky;
-  top:20px;
-}
-.av-wrap { position:relative; width:108px; height:108px; }
-.av-face {
-  width:108px; height:108px;
-  border-radius:50%;
-  overflow:hidden;
-  border:2.5px solid var(--accent);
-}
-.av-face svg { width:100%; height:100%; }
-.sring {
-  position:absolute;
-  inset:-7px;
-  border-radius:50%;
-  border:2px solid var(--teal);
-  opacity:0;
-  transition:opacity .3s;
-}
-.is-speaking .sring { opacity:1; animation:sr 1.3s infinite; }
-@keyframes sr {
-  0%,100% { transform:scale(1); opacity:.8; }
-  50%      { transform:scale(1.07); opacity:.3; }
-}
-.iv-name { font-family:'Fraunces',serif; font-size:.98rem; text-align:center; }
-.iv-title { font-size:.7rem; color:var(--muted); text-align:center; line-height:1.5; }
-.iv-tag {
-  font-size:.66rem; font-family:'JetBrains Mono',monospace;
-  background:rgba(108,143,255,.1); color:var(--accent);
-  border:1px solid rgba(108,143,255,.2);
-  padding:3px 9px; border-radius:20px;
-}
-.iv-status { font-size:.7rem; font-family:'JetBrains Mono',monospace; color:var(--muted); text-align:center; min-height:15px; }
-.iv-status.sp { color:var(--teal); }
-
-.chat-col { display:flex; flex-direction:column; gap:13px; }
-
-.msg {
-  display:flex; gap:10px; align-items:flex-start;
-  opacity:0; transform:translateY(8px);
-  animation:fi .35s forwards;
-}
-@keyframes fi { to { opacity:1; transform:translateY(0); } }
-.msg.user { flex-direction:row-reverse; }
-.msg-av {
-  width:29px; height:29px; border-radius:50%;
-  background:var(--accent); color:#fff;
-  display:flex; align-items:center; justify-content:center;
-  font-size:.72rem; flex-shrink:0;
-  font-family:'Fraunces',serif;
-}
-.msg.user .msg-av { background:var(--teal); color:#000; }
-.bubble {
-  max-width:82%;
-  background:var(--surface);
-  border:1px solid var(--border);
-  border-radius:14px 14px 14px 3px;
-  padding:11px 14px;
-  font-size:.88rem; line-height:1.65;
-}
-.msg.user .bubble {
-  background:rgba(108,143,255,.09);
-  border-color:rgba(108,143,255,.2);
-  border-radius:14px 14px 3px 14px;
-}
-
-.comment-card {
-  margin-left:38px;
-  background:var(--comment-bg);
-  border:1px solid rgba(0,212,170,.2);
-  border-left:3px solid var(--teal);
-  border-radius:10px;
-  padding:10px 14px;
-  font-size:.82rem; line-height:1.65;
-  color:#8ecfbf;
-  opacity:0;
-  animation:fi .4s .1s forwards;
-}
-.cc-label {
-  font-family:'JetBrains Mono',monospace;
-  font-size:.62rem; color:var(--teal);
-  letter-spacing:.5px; margin-bottom:5px;
-}
-
-.typing-dots { display:flex; gap:4px; padding:2px 0; }
-.typing-dots span { width:6px; height:6px; background:var(--muted); border-radius:50%; animation:db .8s infinite; }
-.typing-dots span:nth-child(2) { animation-delay:.15s; }
-.typing-dots span:nth-child(3) { animation-delay:.3s; }
-@keyframes db { 0%,80%,100% { transform:translateY(0); } 40% { transform:translateY(-6px); } }
-
-.input-row {
-  display:flex; gap:10px; align-items:center;
-  background:var(--card); border:1px solid var(--border);
-  border-radius:12px; padding:10px 14px;
-  transition:border .2s;
-}
-.input-row:focus-within { border-color:var(--accent); }
-.input-row input {
-  flex:1; background:transparent; border:none; outline:none;
-  color:var(--text); font-family:'DM Sans',sans-serif; font-size:.9rem;
-}
-.input-row input::placeholder { color:var(--muted); }
-.mic-hint { font-size:.72rem; font-family:'JetBrains Mono',monospace; color:var(--muted); text-align:center; min-height:17px; }
-.mic-hint.on { color:var(--teal); }
-.mic-hint.err { color:var(--rose); }
-.input-locked { opacity:.4; pointer-events:none; }
-
-#result-screen { display:none; }
-.result-top {
-  display:flex; flex-direction:column; align-items:center;
-  gap:12px; padding:32px 0 20px; text-align:center;
-}
-.score-ring { width:148px; height:148px; position:relative; }
-.score-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
-.score-ring circle { fill:none; stroke-width:10; }
-.ring-track { stroke:var(--border); }
-.ring-fill { stroke:var(--teal); stroke-linecap:round; transition:stroke-dashoffset 1.6s cubic-bezier(.4,0,.2,1); }
-.score-inner {
-  position:absolute; inset:0;
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-}
-.score-num-big { font-family:'Fraunces',serif; font-size:2.8rem; line-height:1; }
-.score-denom { font-size:.73rem; color:var(--muted); }
-.result-grade { font-family:'Fraunces',serif; font-size:1.5rem; color:var(--teal); }
-.result-note { color:var(--muted); font-size:.87rem; max-width:420px; line-height:1.65; }
-
-.result-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:24px; }
-.r-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; }
-.r-card h3 { font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--muted); letter-spacing:.5px; text-transform:uppercase; margin-bottom:14px; }
-.bar-row { display:flex; align-items:center; gap:8px; margin-bottom:9px; }
-.bar-row label { font-size:.79rem; min-width:128px; }
-.bar-track { flex:1; height:5px; background:var(--border); border-radius:4px; overflow:hidden; }
-.bar-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,var(--teal),var(--accent)); width:0; transition:width 1.2s ease; }
-.bar-pct { font-family:'JetBrains Mono',monospace; font-size:.7rem; color:var(--teal); min-width:30px; text-align:right; }
-.feedback-body { font-size:.85rem; line-height:1.7; }
-.feedback-body strong { color:var(--teal); }
-
-.result-acts { display:flex; gap:12px; justify-content:center; margin-top:28px; flex-wrap:wrap; }
-
-@media(max-width:620px){
-  .main-grid { grid-template-columns:1fr; }
-  .iv-panel { position:static; flex-direction:row; flex-wrap:wrap; }
-  .result-grid { grid-template-columns:1fr; }
-}
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+:root{--bg:#0a0c12;--surface:#10141f;--card:#141929;--border:#1c2338;--accent:#7b6fff;--teal:#00d4b4;--gold:#ffc94d;--rose:#ff6b8a;--text:#e4e8f4;--muted:#5a637e;--soft:#8892aa}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;background-image:radial-gradient(ellipse at 20% 0%,rgba(123,111,255,.07) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(0,212,180,.05) 0%,transparent 60%)}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 60px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;padding-bottom:18px;border-bottom:1px solid var(--border)}
+.logo{font-family:'Space Mono',monospace;font-size:.95rem;color:var(--accent);letter-spacing:1px}
+.logo em{color:var(--teal);font-style:normal}
+.role-tag{font-size:.65rem;font-family:'Space Mono',monospace;background:rgba(0,212,180,.08);color:var(--teal);border:1px solid rgba(0,212,180,.2);padding:5px 12px;border-radius:20px}
+#start-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:65vh;gap:20px;text-align:center}
+.eyebrow{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--teal);letter-spacing:2px;text-transform:uppercase}
+.start-h{font-size:2.4rem;font-weight:700;line-height:1.1;max-width:480px}
+.start-h em{color:var(--accent);font-style:normal}
+.start-p{color:var(--soft);font-size:.9rem;line-height:1.75;max-width:420px;font-weight:300}
+.pills{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+.pill{font-size:.68rem;font-family:'Space Mono',monospace;background:rgba(123,111,255,.1);color:var(--accent);border:1px solid rgba(123,111,255,.22);padding:5px 13px;border-radius:20px}
+.btn-go{display:inline-flex;align-items:center;gap:10px;padding:14px 36px;background:linear-gradient(135deg,var(--accent),#5e52e8);color:#fff;border:none;border-radius:10px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:all .22s;box-shadow:0 6px 28px rgba(123,111,255,.35)}
+.btn-go:hover{transform:translateY(-2px);box-shadow:0 10px 36px rgba(123,111,255,.45)}
+.note{font-size:.7rem;color:var(--muted);font-family:'Space Mono',monospace}
+/* UNLOCK OVERLAY */
+#unlock-overlay{display:none;position:fixed;inset:0;background:rgba(10,12,18,.9);z-index:100;align-items:center;justify-content:center}
+.unlock-box{background:var(--card);border:2px solid var(--teal);border-radius:20px;padding:36px 40px;max-width:380px;display:flex;flex-direction:column;align-items:center;gap:15px;text-align:center}
+.u-icon{font-size:3rem}
+.u-title{font-size:1.2rem;font-weight:700;color:var(--teal)}
+.u-desc{font-size:.85rem;color:var(--soft);line-height:1.6}
+.btn-unlock{display:inline-flex;align-items:center;gap:10px;padding:14px 32px;background:linear-gradient(135deg,var(--teal),#00a88f);color:#000;border:none;border-radius:10px;font-family:'Sora',sans-serif;font-size:.98rem;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(0,212,180,.35)}
+/* INTERVIEW */
+#interview-screen{display:none}
+.prog-row{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.prog-lbl{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--muted);white-space:nowrap}
+.prog-track{flex:1;height:4px;background:var(--border);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--teal));transition:width .6s ease;width:0%}
+.q-badge{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--gold);white-space:nowrap}
+.iv-grid{display:grid;grid-template-columns:220px 1fr;gap:16px;align-items:start}
+.av-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px 14px;display:flex;flex-direction:column;align-items:center;gap:11px;position:sticky;top:16px}
+.av-wrap{position:relative;width:106px;height:106px}
+.av-face{width:106px;height:106px;border-radius:50%;border:2.5px solid var(--accent);overflow:hidden;background:#0d1120}
+.av-face svg{width:100%;height:100%}
+.av-ring{position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--teal);opacity:0;transition:opacity .3s}
+.av-ring.on{opacity:1;animation:rp 1.1s ease-in-out infinite}
+@keyframes rp{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.07);opacity:.2}}
+.av-name{font-size:.95rem;font-weight:600;text-align:center}
+.av-title{font-size:.68rem;color:var(--soft);text-align:center;line-height:1.5}
+.av-co{font-family:'Space Mono',monospace;font-size:.6rem;color:var(--accent);background:rgba(123,111,255,.1);border:1px solid rgba(123,111,255,.2);padding:3px 10px;border-radius:20px}
+.av-st{font-family:'Space Mono',monospace;font-size:.62rem;color:var(--muted);text-align:center;min-height:15px;transition:color .3s}
+.av-st.speaking{color:var(--teal)}.av-st.listening{color:var(--gold)}
+.btn-replay{display:none;margin-top:2px;padding:5px 13px;background:rgba(0,212,180,.08);border:1px solid var(--teal);color:var(--teal);border-radius:20px;font-family:'Space Mono',monospace;font-size:.6rem;cursor:pointer}
+.btn-replay:hover{background:rgba(0,212,180,.18)}
+.chat-box{background:var(--card);border:1px solid var(--border);border-radius:18px;display:flex;flex-direction:column;min-height:460px;overflow:hidden}
+.chat-scroll{flex:1;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:11px;max-height:440px;scroll-behavior:smooth}
+.brow{display:flex;gap:8px;align-items:flex-start;opacity:0;transform:translateY(8px);animation:pi .35s forwards}
+.brow.user{flex-direction:row-reverse}
+@keyframes pi{to{opacity:1;transform:translateY(0)}}
+.bav{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.64rem;font-weight:700;font-family:'Space Mono',monospace}
+.bav.ai{background:var(--accent);color:#fff}.bav.user{background:var(--teal);color:#000}
+.bubble{max-width:80%;padding:11px 14px;font-size:.85rem;line-height:1.65;border-radius:14px}
+.bubble.ai{background:#181f34;border:1px solid var(--border);border-radius:14px 14px 14px 3px}
+.bubble.user{background:rgba(123,111,255,.13);border:1px solid rgba(123,111,255,.2);border-radius:14px 14px 3px 14px}
+.fb{margin-left:36px;padding:10px 13px;border-radius:10px;font-size:.79rem;line-height:1.6;border-left:3px solid;opacity:0;animation:pi .4s .1s forwards}
+.fb.good{background:rgba(0,212,180,.08);border-color:var(--teal);color:#90ede0}
+.fb.okay{background:rgba(255,201,77,.08);border-color:var(--gold);color:#f0d080}
+.fb.needs-work{background:rgba(255,107,138,.08);border-color:var(--rose);color:#ffaabb}
+.fb-lbl{font-family:'Space Mono',monospace;font-size:.6rem;font-weight:700;letter-spacing:.5px;margin-bottom:4px}
+.dots{display:flex;gap:5px;padding:3px 0}
+.dots span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:td .9s infinite}
+.dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}
+@keyframes td{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}
+.input-zone{border-top:1px solid var(--border);background:var(--surface);padding:11px 13px;display:flex;align-items:center;gap:10px;transition:opacity .2s}
+.input-zone.locked{opacity:.4;pointer-events:none}
+.tin{flex:1;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text);font-family:'Sora',sans-serif;font-size:.85rem;outline:none;transition:border .2s}
+.tin:focus{border-color:var(--accent)}.tin::placeholder{color:var(--muted)}
+.btn-mic{width:46px;height:46px;border-radius:50%;border:none;background:linear-gradient(135deg,var(--teal),#00a88f);color:#000;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;box-shadow:0 3px 14px rgba(0,212,180,.3)}
+.btn-mic:hover{transform:scale(1.07)}
+.btn-mic.rec{background:linear-gradient(135deg,var(--rose),#cc2244);box-shadow:0 3px 14px rgba(255,107,138,.4);animation:mp 1s infinite}
+@keyframes mp{0%,100%{box-shadow:0 3px 14px rgba(255,107,138,.4)}50%{box-shadow:0 3px 26px rgba(255,107,138,.7)}}
+.hint{padding:5px 13px 9px;font-size:.67rem;font-family:'Space Mono',monospace;color:var(--muted);text-align:center;min-height:23px}
+.hint.on{color:var(--teal)}
+#result-screen{display:none}
+.rtop{text-align:center;padding:30px 0 24px}
+.ring-w{width:158px;height:158px;margin:0 auto 18px;position:relative}
+.ring-w svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring-w circle{fill:none;stroke-width:11}
+.tc{stroke:var(--border)}.fc{stroke:var(--teal);stroke-linecap:round;transition:stroke-dashoffset 1.4s ease}
+.rc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.snum{font-size:2.8rem;font-weight:700;line-height:1}
+.sden{font-size:.7rem;color:var(--muted);font-family:'Space Mono',monospace}
+.verdict{font-size:1.45rem;font-weight:700;color:var(--teal);margin-bottom:6px}
+.rsub{font-size:.85rem;color:var(--soft)}
+.rcols{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:24px}
+.rcrd{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px}
+.rcrd h3{font-family:'Space Mono',monospace;font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:13px}
+.sbr{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.sbl{font-size:.78rem;min-width:118px}
+.sbt{flex:1;height:5px;background:var(--border);border-radius:5px;overflow:hidden}
+.sbf{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--teal),var(--accent));transition:width 1s ease}
+.sbp{font-family:'Space Mono',monospace;font-size:.68rem;color:var(--teal);min-width:30px;text-align:right}
+.ofb{font-size:.86rem;line-height:1.7;color:var(--text)}.ofb strong{color:var(--teal)}
+.rbtns{display:flex;gap:11px;justify-content:center;margin-top:26px}
+.btn-retry{padding:12px 28px;background:linear-gradient(135deg,var(--accent),#5e52e8);color:#fff;border:none;border-radius:9px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:0 4px 20px rgba(123,111,255,.3)}
+.btn-retry:hover{transform:translateY(-2px)}
+.btn-ghost{padding:12px 22px;background:transparent;color:var(--soft);border:1px solid var(--border);border-radius:9px;font-family:'Sora',sans-serif;font-size:.85rem;cursor:pointer;transition:all .2s}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+@media(max-width:600px){.iv-grid{grid-template-columns:1fr}.av-card{position:static;flex-direction:row;flex-wrap:wrap;padding:12px}.rcols{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="wrap">
-
 <header>
-  <div class="logo">GAO<span>Tek</span></div>
-  <div class="role-badge">AI-DRIVEN TECHNICAL WRITING INTERN · REMOTE</div>
+  <div class="logo">GAO<em>Tek</em></div>
+  <div class="role-tag">AI TECHNICAL WRITING INTERN</div>
 </header>
 
-<!-- START -->
 <div id="start-screen">
-  <div>
-    <div class="tags" style="margin-bottom:14px;">
-      <span class="tag">5 Questions</span>
-      <span class="tag">Feedback Per Answer</span>
-      <span class="tag">Different Every Session</span>
-    </div>
-    <h1>Mock Interview<br><em>Simulator</em></h1>
+  <div class="eyebrow">Interview Practice Simulator</div>
+  <h1 class="start-h">Practice until it feels <em>natural</em></h1>
+  <p class="start-p">5 unique questions every session, tailored to your background and the GAO Tek role. Live feedback after every answer. New questions on every refresh.</p>
+  <div class="pills">
+    <span class="pill">🎙 Voice input</span>
+    <span class="pill">💬 Feedback per answer</span>
+    <span class="pill">♾ New every session</span>
+    <span class="pill">📊 Scored /100</span>
   </div>
-  <p>Dr. Sarah Mensah will interview you for the GAO Tek AI Technical Writing Intern role. She'll respond to what you actually say, comment on each answer honestly, and shape her questions around your responses. Every session is uniquely different.</p>
-  <div class="tags">
-    <span class="tag">🎙 Voice or Type</span>
-    <span class="tag">💬 Live Answer Feedback</span>
-    <span class="tag">📊 Scored /100</span>
-    <span class="tag">👩 Female Interviewer Voice</span>
-  </div>
-  <button class="btn btn-primary" onclick="startInterview()">▶ Start Interview</button>
-  <p style="font-size:.74rem;color:var(--muted);">Allow microphone when prompted · Chrome or Edge recommended for voice</p>
+  <button class="btn-go" onclick="handleStart()">▶  Begin Interview</button>
+  <div class="note">Best in Chrome or Edge · Allow mic when prompted</div>
 </div>
 
-<!-- INTERVIEW -->
-<div id="interview-screen">
-  <div class="progress-wrap">
-    <div class="steps" id="steps"></div>
-    <div class="prog-label" id="prog-label">Question 1 / 5</div>
+<div id="unlock-overlay">
+  <div class="unlock-box">
+    <div class="u-icon">🔊</div>
+    <div class="u-title">Enable Voice</div>
+    <div class="u-desc">Your browser needs one tap before it plays audio. Click below to hear Ms. Adjei speak.</div>
+    <button class="btn-unlock" id="unlock-btn" onclick="unlockAudio()">🔊  Tap to Hear Ms. Adjei</button>
   </div>
-  <div class="main-grid">
-    <div class="iv-panel" id="iv-panel">
-      <div class="av-wrap" id="av-wrap">
+</div>
+
+<div id="interview-screen">
+  <div class="prog-row">
+    <span class="prog-lbl">PROGRESS</span>
+    <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+    <span class="q-badge" id="q-badge">Q 1 / 5</span>
+  </div>
+  <div class="iv-grid">
+    <div class="av-card">
+      <div class="av-wrap">
         <div class="av-face">
           <svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-            <rect width="110" height="110" fill="#111827"/>
-            <ellipse cx="55" cy="108" rx="36" ry="20" fill="#0a1020"/>
-            <rect x="38" y="85" width="34" height="28" fill="#0a1020"/>
-            <rect x="48" y="85" width="14" height="28" fill="#1a2a45"/>
-            <rect x="47" y="74" width="16" height="14" fill="#d4a070"/>
-            <ellipse cx="55" cy="58" rx="25" ry="27" fill="#d4a070"/>
-            <ellipse cx="55" cy="35" rx="25" ry="12" fill="#180a0a"/>
-            <rect x="30" y="35" width="7" height="30" rx="3.5" fill="#180a0a"/>
-            <rect x="73" y="35" width="7" height="30" rx="3.5" fill="#180a0a"/>
-            <ellipse cx="55" cy="31" rx="25" ry="9" fill="#180a0a"/>
-            <ellipse cx="30" cy="59" rx="4" ry="6" fill="#c08850"/>
-            <ellipse cx="80" cy="59" rx="4" ry="6" fill="#c08850"/>
-            <circle cx="30" cy="65" r="2" fill="#f0b429"/>
-            <circle cx="80" cy="65" r="2" fill="#f0b429"/>
-            <ellipse cx="44" cy="58" rx="5.5" ry="6" fill="white"/>
-            <ellipse cx="66" cy="58" rx="5.5" ry="6" fill="white"/>
-            <circle cx="44.5" cy="58" r="3.2" fill="#2a1505"/>
-            <circle cx="66.5" cy="58" r="3.2" fill="#2a1505"/>
-            <circle cx="45.5" cy="57" r=".9" fill="white"/>
-            <circle cx="67.5" cy="57" r=".9" fill="white"/>
-            <path d="M38,51 Q44,47 50,51" stroke="#180a0a" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <path d="M60,51 Q66,47 72,51" stroke="#180a0a" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <ellipse cx="55" cy="67" rx="3.5" ry="2.5" fill="#c08850"/>
-            <path id="mouth" d="M47,76 Q55,81 63,76" stroke="#c06080" stroke-width="2.5" fill="rgba(192,96,128,0.2)" stroke-linecap="round"/>
-            <ellipse cx="37" cy="68" rx="6" ry="3" fill="rgba(255,140,120,0.15)"/>
-            <ellipse cx="73" cy="68" rx="6" ry="3" fill="rgba(255,140,120,0.15)"/>
+            <rect width="110" height="110" fill="#0d1120"/>
+            <ellipse cx="55" cy="118" rx="40" ry="22" fill="#1a1040"/>
+            <rect x="36" y="84" width="38" height="38" fill="#1a1040"/>
+            <rect x="47" y="84" width="16" height="38" fill="#2d1a5e"/>
+            <rect x="47" y="75" width="16" height="12" fill="#d4997a"/>
+            <ellipse cx="55" cy="57" rx="25" ry="28" fill="#d4997a"/>
+            <ellipse cx="55" cy="34" rx="26" ry="12" fill="#1a0d05"/>
+            <rect x="29" y="34" width="52" height="10" fill="#1a0d05"/>
+            <ellipse cx="31" cy="60" rx="7" ry="17" fill="#1a0d05"/>
+            <ellipse cx="79" cy="60" rx="7" ry="17" fill="#1a0d05"/>
+            <ellipse cx="31" cy="59" rx="4" ry="5.5" fill="#c4896a"/>
+            <ellipse cx="79" cy="59" rx="4" ry="5.5" fill="#c4896a"/>
+            <circle cx="31" cy="65" r="2.5" fill="#7b6fff"/>
+            <circle cx="79" cy="65" r="2.5" fill="#7b6fff"/>
+            <ellipse cx="44" cy="57" rx="5.5" ry="6" fill="white"/>
+            <ellipse cx="66" cy="57" rx="5.5" ry="6" fill="white"/>
+            <circle cx="45" cy="57" r="3.5" fill="#1a0d05"/>
+            <circle cx="67" cy="57" r="3.5" fill="#1a0d05"/>
+            <circle cx="46" cy="56" r="1.1" fill="white"/>
+            <circle cx="68" cy="56" r="1.1" fill="white"/>
+            <path d="M38,52 Q44,47 50,52" stroke="#1a0d05" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+            <path d="M60,52 Q66,47 72,52" stroke="#1a0d05" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+            <path d="M38,49 Q44,45 50,49" stroke="#3d1f0a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            <path d="M60,49 Q66,45 72,49" stroke="#3d1f0a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            <ellipse cx="55" cy="67" rx="3" ry="2.2" fill="#c4896a"/>
+            <path id="mouth" d="M47,77 Q55,82 63,77" stroke="#c44060" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <ellipse cx="55" cy="78" rx="8" ry="2.5" fill="#d04060" opacity=".35"/>
+            <ellipse cx="37" cy="66" rx="6" ry="3.5" fill="#e08060" opacity=".16"/>
+            <ellipse cx="73" cy="66" rx="6" ry="3.5" fill="#e08060" opacity=".16"/>
           </svg>
         </div>
-        <div class="sring" id="sring"></div>
+        <div class="av-ring" id="av-ring"></div>
       </div>
-      <div class="iv-name">Dr. Sarah Mensah</div>
-      <div class="iv-title">Senior Technical Recruiter<br>GAO Tek Inc.</div>
-      <div class="iv-tag">HR · Canada Team B</div>
-      <div class="iv-status" id="iv-status"></div>
+      <div class="av-name">Ms. Ama Adjei</div>
+      <div class="av-title">HR Talent Lead<br>GAO Tek Inc.</div>
+      <div class="av-co">Canada · Team B</div>
+      <div class="av-st" id="av-st">Ready</div>
+      <button class="btn-replay" id="btn-replay" onclick="replayLast()">🔊 Replay question</button>
     </div>
-
-    <div class="chat-col" id="chat-col">
-      <div class="input-row input-locked" id="input-row">
-        <input id="txt" type="text" placeholder="Type your answer and press Enter…"
-               onkeydown="if(event.key==='Enter')submitText()"/>
+    <div class="chat-box">
+      <div class="chat-scroll" id="chat-scroll"></div>
+      <div class="input-zone locked" id="input-zone">
+        <input class="tin" id="tin" placeholder="Type your answer and press Enter..." onkeydown="if(event.key==='Enter')submitTyped()"/>
         <button class="btn-mic" id="mic-btn" onclick="toggleMic()">🎙</button>
       </div>
-      <div class="mic-hint" id="mic-hint">Please wait…</div>
+      <div class="hint" id="hint">Waiting for Ms. Adjei...</div>
     </div>
   </div>
 </div>
 
-<!-- RESULT -->
 <div id="result-screen">
-  <div class="result-top">
-    <div class="score-ring">
-      <svg viewBox="0 0 148 148">
-        <circle class="ring-track" cx="74" cy="74" r="62"/>
-        <circle class="ring-fill" id="ring-fill" cx="74" cy="74" r="62"
-                stroke-dasharray="389.6" stroke-dashoffset="389.6"/>
+  <div class="rtop">
+    <div class="ring-w">
+      <svg viewBox="0 0 160 160">
+        <circle class="tc" cx="80" cy="80" r="68"/>
+        <circle class="fc" id="score-arc" cx="80" cy="80" r="68" stroke-dasharray="427" stroke-dashoffset="427"/>
       </svg>
-      <div class="score-inner">
-        <span class="score-num-big" id="score-num">0</span>
-        <span class="score-denom">/100</span>
+      <div class="rc">
+        <span class="snum" id="snum">0</span>
+        <span class="sden">/100</span>
       </div>
     </div>
-    <div class="result-grade" id="result-grade">Evaluating…</div>
-    <div class="result-note" id="result-note"></div>
+    <div class="verdict" id="verdict">—</div>
+    <div class="rsub">Your full performance breakdown</div>
   </div>
-  <div class="result-grid">
-    <div class="r-card"><h3>📊 Skill Breakdown</h3><div id="skill-bars"></div></div>
-    <div class="r-card"><h3>💬 Dr. Sarah's Overall Feedback</h3><div class="feedback-body" id="feedback-body"></div></div>
+  <div class="rcols">
+    <div class="rcrd"><h3>Skill Breakdown</h3><div id="skill-bars"></div></div>
+    <div class="rcrd"><h3>Overall Feedback</h3><div class="ofb" id="ofb"></div></div>
   </div>
-  <div class="result-acts">
-    <button class="btn btn-primary" onclick="restart()">🔄 Try Again — New Questions</button>
-    <button class="btn btn-ghost" onclick="seeTranscript()">📋 Full Transcript</button>
+  <div class="rbtns">
+    <button class="btn-retry" onclick="restart()">🔄  Try Again</button>
+    <button class="btn-ghost" onclick="showTranscript()">📋 Transcript</button>
   </div>
 </div>
-
 </div>
 
 <script>
-// ── STATE ──────────────────────────────────────────────
-let qIndex = 0;
-let conversation = [];
-let allAnswers   = [];
-let waiting      = false;
-let recognition  = null;
-let isRecording  = false;
-const synth      = window.speechSynthesis;
-let femaleVoice  = null;
-let voicesReady  = false;
+var qIdx=0,log=[],awaitInput=false,isRec=false,recog=null,mouthTimer=null,ttsVoices=[],pendingText='',pendingCb=null,lastSpokenText='',sessionID='';
+var TOTAL=5;
 
-const SESSION_SEED = Date.now() + Math.floor(Math.random() * 99999);
+var POOL=[
+  {id:'intro',h:'Open warmly with a brief greeting mentioning GAO Tek. Ask who they are, what they study, and what draws them to AI and technical writing.'},
+  {id:'cs_angle',h:'Ask what part of Computer Science they find most relevant to technical writing and why they chose CS over a pure writing degree.'},
+  {id:'rsm',h:'Ask them to explain Response Surface Methodology (RSM) simply, as if talking to someone with no engineering background.'},
+  {id:'best_tool',h:'Ask which AI research tool — Elicit, Consensus, or SciSpace — was most useful in their paper and what specific task it solved.'},
+  {id:'referencing',h:'Ask how they managed Harvard-style referencing in the paper and whether they can apply it confidently in professional documents.'},
+  {id:'paper_hard',h:'Ask what the hardest part of co-authoring the research paper was, especially around writing clearly for a technical audience.'},
+  {id:'paper_wrote',h:'Ask exactly which sections or content they personally drafted in the research paper.'},
+  {id:'html_proj',h:'Ask them to describe the truck logistics tracking system: what problem it solves, key features, and who the users are.'},
+  {id:'ai_coding',h:'Ask how Claude AI specifically helped them build the HTML project and whether they always understood the generated code.'},
+  {id:'doc_proj',h:'Ask whether the logistics project has any documentation and how they would write a user guide for it today.'},
+  {id:'good_doc',h:'Ask what they think makes a great technical user guide — the hallmarks of professional, clear documentation.'},
+  {id:'unfam_tech',h:'Ask how they would approach writing docs for a GAO Tek IoT product they have never seen before, step by step.'},
+  {id:'ai_safe',h:'Ask how they would use ChatGPT or Grammarly responsibly in technical writing — ensuring accuracy without blindly copying AI output.'},
+  {id:'remote',h:'Ask how they plan to stay consistent and accountable working remotely 20 hours a week with a flexible schedule.'},
+  {id:'why_gaotek',h:'Ask why they specifically chose this GAO Tek internship and what they hope to produce in 15 weeks.'},
+  {id:'global',h:'Ask how comfortable they are collaborating with engineers from very different backgrounds, and for an example of translating complex info for a non-expert.'},
+  {id:'weakness',h:'Ask what their biggest skill gap is for this role right now and what concrete steps they are taking to fix it.'},
+  {id:'career',h:'Ask where they see themselves 2 years from now and how this internship fits into that path.'}
+];
 
-// ── VOICE LOADING — robust, waits until voices actually exist ──
-function pickFemaleVoice() {
-  const voices = synth.getVoices();
-  if (!voices || voices.length === 0) return false;
-  const preferred = [
-    'Samantha','Karen','Moira','Tessa','Fiona','Veena',
-    'Google UK English Female','Microsoft Zira Desktop',
-    'Microsoft Hazel Desktop','Microsoft Zira','Microsoft Hazel',
-    'Nicky','Victoria','Allison','Ava','Susan','Joanna',
-    'Amy','Emma','Salli','Kendra','Kimberly','Ivy'
-  ];
-  for (const n of preferred) {
-    const v = voices.find(v => v.name.includes(n));
-    if (v) { femaleVoice = v; voicesReady = true; return true; }
+var sessionAngles=[];
+
+function pickAngles(){
+  var first=POOL[0];
+  var rest=POOL.slice(1).sort(function(){return Math.random()-.5}).slice(0,TOTAL-1);
+  sessionAngles=[first].concat(rest);
+  sessionID=Math.random().toString(36).slice(2,8);
+}
+
+var SYS='You are Ms. Ama Adjei, a warm but professional HR Talent Lead at GAO Tek Inc. GAO Tek: US-based high-tech company (HQ New York) — electronics, IoT devices, networking/telecom, AI content. ROLE: AI-Driven Technical Writing Intern (remote, 3-6 months): create/edit user guides, manuals, datasheets, reports; use AI/NLP tools for research; collaborate globally. CANDIDATE: CS student interested in AI and technical writing; co-authored research paper on hydrometallurgy leaching optimization using RSM, Elicit, Consensus, SciSpace, Mendeley (Harvard referencing); built HTML/CSS/JS truck logistics tracker using Claude AI; tools: ChatGPT, Grammarly, Jupyter Notebook. YOUR STYLE: warm, genuine, conversational. Reference what the candidate just said. One question at a time.';
+
+async function callClaude(userMsg){
+  var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:380,system:SYS,messages:[{role:'user',content:userMsg}]})});
+  if(!r.ok)throw new Error('API '+r.status);
+  var d=await r.json();
+  return(d.content&&d.content.find(function(b){return b.type==='text'}))||{text:''};
+}
+async function api(msg){return(await callClaude(msg)).text.trim()}
+
+/* VOICES */
+function loadVoices(){ttsVoices=(window.speechSynthesis&&window.speechSynthesis.getVoices())||[]}
+if(window.speechSynthesis){
+  speechSynthesis.onvoiceschanged=loadVoices;
+  setTimeout(loadVoices,100);setTimeout(loadVoices,600);setTimeout(loadVoices,1800);
+}
+
+function pickFemale(){
+  loadVoices();
+  var names=['Samantha','Victoria','Karen','Moira','Tessa','Fiona','Veena','Zira','Allison','Ava','Joanna','Emma','Amy','Google UK English Female','Microsoft Zira','Microsoft Susan'];
+  for(var i=0;i<names.length;i++){var v=ttsVoices.find(function(x){return x.name.indexOf(names[i])>=0});if(v)return v}
+  var f=ttsVoices.find(function(v){return v.name.toLowerCase().indexOf('female')>=0});if(f)return f;
+  var gb=ttsVoices.find(function(v){return v.lang==='en-GB'});if(gb)return gb;
+  return ttsVoices.find(function(v){return v.lang&&v.lang.indexOf('en')===0})||ttsVoices[0]||null;
+}
+
+function speak(text,cb){
+  if(!window.speechSynthesis){setAvatarOn(false);cb&&cb();return}
+  speechSynthesis.cancel();
+  var u=new SpeechSynthesisUtterance(text);
+  u.rate=0.9;u.pitch=1.2;u.volume=1;
+  var v=pickFemale();if(v)u.voice=v;
+  var done=false;
+  function finish(){if(done)return;done=true;setAvatarOn(false);showReplay(true);cb&&cb()}
+  u.onstart=function(){setAvatarOn(true);setSt('Speaking...','speaking');showReplay(false)};
+  u.onend=finish;
+  u.onerror=function(e){console.warn('TTS error',e.error);finish()};
+  speechSynthesis.speak(u);
+  // Safety timeout — if TTS hangs, proceed after text-length-based delay
+  var safeMs=Math.max(4000, text.length*60);
+  setTimeout(function(){if(!done)finish()},safeMs);
+}
+
+function speakOrUnlock(text,cb){
+  lastSpokenText=text;
+  loadVoices();
+  if(!window.speechSynthesis){addBubble('ai',text);setSt('(no audio — read above)','');cb&&cb();return}
+  if(ttsVoices.length===0){
+    pendingText=text;pendingCb=cb;
+    document.getElementById('unlock-overlay').style.display='flex';
+    return;
   }
-  // Fallback: any English voice
-  const fallback = voices.find(v =>
-    v.lang.startsWith('en') &&
-    (v.name.toLowerCase().includes('female') ||
-     v.name.toLowerCase().includes('woman') ||
-     ['f','karen','sarah','lisa','anna'].some(k => v.name.toLowerCase().includes(k)))
-  ) || voices.find(v => v.lang.startsWith('en')) || voices[0];
-
-  if (fallback) { femaleVoice = fallback; voicesReady = true; return true; }
-  return false;
+  speak(text,cb);
 }
 
-// Load voices immediately and on change event
-pickFemaleVoice();
-synth.onvoiceschanged = () => { pickFemaleVoice(); };
-
-// Robust wait-for-voices function
-function waitForVoices(cb, retries = 30) {
-  if (pickFemaleVoice()) { cb(); return; }
-  if (retries <= 0) { cb(); return; } // give up and proceed anyway
-  setTimeout(() => waitForVoices(cb, retries - 1), 150);
+function unlockAudio(){
+  document.getElementById('unlock-overlay').style.display='none';
+  loadVoices();
+  var silent=new SpeechSynthesisUtterance(' ');
+  silent.volume=0.01;
+  silent.onend=function(){
+    if(pendingText){var t=pendingText,c=pendingCb;pendingText='';pendingCb=null;setTimeout(function(){speak(t,c)},150)}
+  };
+  silent.onerror=function(){
+    if(pendingText){var t=pendingText,c=pendingCb;pendingText='';pendingCb=null;setTimeout(function(){speak(t,c)},150)}
+  };
+  speechSynthesis.speak(silent);
 }
 
-// ── SPEAK — reliable, handles all edge cases ──
-function speak(text, cb) {
-  // Cancel any ongoing speech
-  synth.cancel();
+function replayLast(){if(lastSpokenText)speak(lastSpokenText,function(){setSt('Listening...','listening')})}
 
-  // Small delay after cancel to avoid Chrome bug
-  setTimeout(() => {
-    const u = new SpeechSynthesisUtterance(text);
-
-    // Apply voice if available
-    if (femaleVoice) {
-      u.voice = femaleVoice;
-      u.lang  = femaleVoice.lang;
-    } else {
-      u.lang = 'en-US';
-    }
-
-    u.rate   = 0.88;
-    u.pitch  = 1.15;
-    u.volume = 1;
-
-    u.onstart = () => setSpeaking(true);
-
-    u.onend = () => {
-      setSpeaking(false);
-      if (cb) cb();
-    };
-
-    u.onerror = (e) => {
-      console.warn('Speech error:', e.error);
-      setSpeaking(false);
-      if (cb) cb();
-    };
-
-    synth.speak(u);
-
-    // Chrome sometimes stalls — nudge it
-    setTimeout(() => {
-      if (synth.paused) synth.resume();
-    }, 200);
-
-  }, 100);
-}
-
-let mouthTimer;
-function setSpeaking(on) {
-  const wrap = document.getElementById('av-wrap');
-  const st   = document.getElementById('iv-status');
+function setAvatarOn(on){
+  document.getElementById('av-ring').classList.toggle('on',on);
   clearInterval(mouthTimer);
-  const m = document.getElementById('mouth');
-  if (on) {
-    wrap.classList.add('is-speaking');
-    st.textContent = 'Speaking…'; st.className = 'iv-status sp';
-    let open = true;
-    mouthTimer = setInterval(() => {
-      if (m) m.setAttribute('d', open ? 'M47,76 Q55,84 63,76' : 'M47,76 Q55,81 63,76');
-      open = !open;
-    }, 155);
-  } else {
-    wrap.classList.remove('is-speaking');
-    st.textContent = ''; st.className = 'iv-status';
-    if (m) m.setAttribute('d','M47,76 Q55,81 63,76');
-  }
+  var m=document.getElementById('mouth');if(!m)return;
+  if(on){var open=true;mouthTimer=setInterval(function(){m.setAttribute('d',open?'M47,77 Q55,86 63,77':'M47,77 Q55,82 63,77');open=!open},190)}
+  else m.setAttribute('d','M47,77 Q55,82 63,77');
+}
+function showReplay(show){document.getElementById('btn-replay').style.display=show?'block':'none'}
+
+/* START */
+function handleStart(){
+  pickAngles();qIdx=0;log=[];awaitInput=false;lastSpokenText='';
+  document.getElementById('start-screen').style.display='none';
+  document.getElementById('interview-screen').style.display='block';
+  document.getElementById('chat-scroll').innerHTML='';
+  showReplay(false);updateProg();lockInput(true);setSt('Loading...','');
+  loadVoices();
+  setTimeout(function(){askQuestion(0)},500);
 }
 
-// ── UI HELPERS ─────────────────────────────────────────
-function esc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-function addBubble(role, text) {
-  const col = document.getElementById('chat-col');
-  const ir  = document.getElementById('input-row');
-  const d   = document.createElement('div');
-  d.className = `msg ${role==='user'?'user':''}`;
-  d.innerHTML = `<div class="msg-av">${role==='user'?'You':'DS'}</div>
-    <div class="bubble">${esc(text)}</div>`;
-  col.insertBefore(d, ir);
-  ir.scrollIntoView({behavior:'smooth',block:'end'});
+/* ASK QUESTION */
+async function askQuestion(idx){
+  var angle=sessionAngles[idx];
+  var history=log.map(function(m){return(m.role==='ai'?'MS. ADJEI':'CANDIDATE')+': '+m.text}).join('\n\n');
+  var msg='SESSION:'+sessionID+' | Q'+(idx+1)+' of '+TOTAL+'\nFOCUS: '+angle.h+'\n'+(history?'CONVERSATION:\n'+history:'(Starting now)')+'\n\nRULES: Output ONLY what Ms. Adjei says — no labels, no quotes. Q1: warm greeting mentioning GAO Tek then ask. Q2+: briefly acknowledge something from last answer then ask. ONE question, under 65 words. Vary phrasing (session:'+sessionID+')';
+  var typing=showTyping();
+  var q='';
+  try{q=await api(msg)}catch(e){q=FALLBACKS[idx]||'Can you tell me more about how AI tools fit into your work?'}
+  hideTyping(typing);
+  addBubble('ai',q);
+  log.push({role:'ai',text:q});
+  speakOrUnlock(q,function(){setSt('Listening...','listening');lockInput(false)});
 }
 
-function addComment(text) {
-  const col = document.getElementById('chat-col');
-  const ir  = document.getElementById('input-row');
-  const d   = document.createElement('div');
-  d.className = 'comment-card';
-  d.innerHTML = `<div class="cc-label">💡 DR. SARAH'S FEEDBACK ON YOUR ANSWER</div>${esc(text)}`;
-  col.insertBefore(d, ir);
-  ir.scrollIntoView({behavior:'smooth',block:'end'});
-}
-
-function addTyping() {
-  const col = document.getElementById('chat-col');
-  const ir  = document.getElementById('input-row');
-  const d   = document.createElement('div');
-  d.className='msg'; d.id='typing';
-  d.innerHTML=`<div class="msg-av">DS</div>
-    <div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
-  col.insertBefore(d, ir);
-  ir.scrollIntoView({behavior:'smooth',block:'end'});
-}
-function removeTyping(){ const e=document.getElementById('typing'); if(e) e.remove(); }
-
-function lockInput(l) {
-  waiting = !l;
-  const r = document.getElementById('input-row');
-  l ? r.classList.add('input-locked') : r.classList.remove('input-locked');
-}
-function setHint(msg, cls='') {
-  const e = document.getElementById('mic-hint');
-  if (e) { e.textContent = msg; e.className = 'mic-hint '+cls; }
-}
-function updateProgress() {
-  const steps = document.getElementById('steps');
-  steps.innerHTML = '';
-  for (let i=0;i<5;i++){
-    const d=document.createElement('div');
-    d.className='step'+(i<qIndex?' done':i===qIndex?' active':'');
-    steps.appendChild(d);
-  }
-  document.getElementById('prog-label').textContent=`Question ${Math.min(qIndex+1,5)} / 5`;
-}
-
-// ── CLAUDE API ─────────────────────────────────────────
-async function callClaude(system, userMsg, maxTok=350) {
-  const r = await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      model:'claude-sonnet-4-20250514',
-      max_tokens:maxTok,
-      system,
-      messages:[{role:'user',content:userMsg}]
-    })
-  });
-  const d = await r.json();
-  return (d.content?.[0]?.text||'').trim();
-}
-
-function buildSystem() {
-  return `You are Dr. Sarah Mensah, a warm but honest and professional female senior technical recruiter at GAO Tek Inc.
-You are conducting a 5-question interview for the AI-Driven Technical Writing Intern role (fully remote, 3–6 months).
-
-ROLE: Create/edit technical docs (user guides, manuals, datasheets, reports), use AI/NLP tools for research and content, collaborate with global teams, work on marketing and HR documentation content.
-
-CANDIDATE BACKGROUND:
-• Computer Science student passionate about AI and technical writing
-• Co-authored research paper on hydrometallurgy leaching optimization (RSM — Response Surface Methodology)
-• Used Elicit, Consensus, SciSpace for AI-powered academic research
-• Used Mendeley for Harvard-style referencing (in-text citations + bibliography)
-• Built a truck logistics tracking system in HTML, CSS, JavaScript using Claude AI for coding help
-• Also uses: ChatGPT, Grammarly, Jupyter Notebook
-
-SESSION VARIATION KEY: ${SESSION_SEED} — use this to ensure this session asks distinctly different questions from other sessions.`;
-}
-
-async function getOpener() {
-  const system = buildSystem();
-  const prompt = `Generate a warm, professional opening question for this interview.
-It should invite the candidate to introduce themselves, but vary the exact phrasing each session.
-Some sessions start with "tell me about yourself", others might open with "what brought you to apply for this role" or "walk me through your background".
-Keep it under 55 words. Return ONLY the spoken question text, no quotes.`;
-  const q = await callClaude(system, prompt, 120);
-  return q || "Welcome, and thank you so much for joining me today. I'm really looking forward to our conversation. To get us started, could you tell me a little about yourself and what drew you to apply for this AI Technical Writing Intern position at GAO Tek?";
-}
-
-async function getCommentAndNext(answer, qNum) {
-  const history = conversation.map(m=>
-    `${m.role==='iv'?'DR. SARAH':'CANDIDATE'}: ${m.text}`).join('\n');
-  const isLast = qNum >= 4;
-  const system = buildSystem();
-
-  const prompt = `CONVERSATION SO FAR:
-${history}
-
-CANDIDATE'S LATEST ANSWER TO QUESTION ${qNum+1}: "${answer}"
-
-${isLast ? `This was the 5th and final question.
-Return JSON only:
-{
-  "comment": "2-3 sentences of specific, honest feedback on this answer.",
-  "closing": "A warm closing statement of 2-3 sentences thanking the candidate and noting one or two things that stood out. Do not ask another question."
-}` : `Return JSON only:
-{
-  "comment": "2-3 sentences of honest, specific feedback on this answer. Reference something they actually said.",
-  "nextQuestion": "Your next interview question (question ${qNum+2} of 5). Build naturally from what they said. Keep under 55 words."
-}
-IMPORTANT: The question must feel like a genuine follow-up to their specific answer.`}
-Return ONLY valid JSON. No markdown.`;
-
-  try {
-    const raw = await callClaude(system, prompt, 420);
-    const clean = raw.replace(/```json|```/g,'').trim();
-    return JSON.parse(clean);
-  } catch(e) {
-    const fallbacks = [
-      "Could you tell me more about how you specifically used those AI research tools — what steps did you take?",
-      "You mentioned working with HTML and CSS — how comfortable are you producing written documentation for technical products?",
-      "Thinking about the GAO Tek role — what type of technical content do you feel most confident producing right now?",
-      "How do you ensure that AI-generated content is accurate and professional before including it in a final document?"
-    ];
-    return {
-      comment: "Thank you for that. Try to be more specific — concrete examples will make your answers much stronger.",
-      nextQuestion: isLast ? undefined : fallbacks[Math.min(qNum, fallbacks.length-1)]
-    };
-  }
-}
-
-async function generateScore() {
-  const transcript = conversation.map(m=>
-    `${m.role==='iv'?'DR. SARAH':'CANDIDATE'}: ${m.text}`).join('\n\n');
-  const system = buildSystem();
-  const prompt = `You evaluated a 5-question interview. Here is the full transcript:
-
-${transcript}
-
-Score the candidate for the AI-Driven Technical Writing Intern role at GAO Tek.
-Return ONLY valid JSON (no markdown):
-{
-  "overall": <0-100>,
-  "skills": {
-    "Communication Clarity": <0-100>,
-    "AI Tool Awareness": <0-100>,
-    "Research Experience": <0-100>,
-    "Technical Writing": <0-100>,
-    "Role Understanding": <0-100>,
-    "Confidence & Preparation": <0-100>
-  },
-  "grade": "<Strong Candidate | Promising Candidate | Needs More Preparation | Keep Practising>",
-  "feedback": "<3-4 sentences of specific, honest feedback referencing actual things said in the interview.>"
-}`;
-
-  try {
-    const raw = await callClaude(system, prompt, 520);
-    const clean = raw.replace(/```json|```/g,'').trim();
-    return JSON.parse(clean);
-  } catch(e) {
-    const base = Math.min(58 + allAnswers.join(' ').split(' ').length/8, 85);
-    return {
-      overall: Math.round(base),
-      skills:{"Communication Clarity":Math.round(base-4),"AI Tool Awareness":Math.round(base+4),"Research Experience":Math.round(base),"Technical Writing":Math.round(base-6),"Role Understanding":Math.round(base-2),"Confidence & Preparation":Math.round(base-8)},
-      grade:"Promising Candidate",
-      feedback:"You showed awareness of relevant AI tools and have good foundational experience. To improve, be more specific — name exact outputs and connect your background directly to what the role needs."
-    };
-  }
-}
-
-// ── INTERVIEW FLOW ──────────────────────────────────────
-async function startInterview() {
-  document.getElementById('start-screen').style.display = 'none';
-  document.getElementById('interview-screen').style.display = 'block';
-
-  qIndex = 0; conversation = []; allAnswers = [];
-
-  document.getElementById('chat-col').innerHTML = `
-    <div class="input-row input-locked" id="input-row">
-      <input id="txt" type="text" placeholder="Type your answer and press Enter…"
-             onkeydown="if(event.key==='Enter')submitText()"/>
-      <button class="btn-mic" id="mic-btn" onclick="toggleMic()">🎙</button>
-    </div>
-    <div class="mic-hint" id="mic-hint">Loading Dr. Sarah's voice…</div>`;
-
-  lockInput(true);
-  updateProgress();
-
-  // ── KEY FIX: wait for voices before doing anything ──
-  waitForVoices(async () => {
-    addTyping();
-    const q = await getOpener();
-    removeTyping();
-    addBubble('iv', q);
-    conversation.push({role:'iv', text:q});
-
-    // Speak the opening question out loud
-    speak(q, () => {
-      lockInput(false);
-      setHint('Click 🎙 to speak — or type and press Enter');
-    });
+/* SUBMIT */
+function submitAnswer(answer){
+  if(!answer||!answer.trim())return;
+  lockInput(true);showReplay(false);setSt('Reviewing...','');
+  addBubble('user',answer);
+  log.push({role:'user',text:answer});
+  getFeedback(answer,function(){
+    qIdx++;updateProg();
+    if(qIdx>=TOTAL){closeOut()}else{setSt('Speaking...','speaking');askQuestion(qIdx)}
   });
 }
 
-async function processAnswer(answer) {
-  lockInput(true);
-  setHint('Dr. Sarah is thinking…');
-  addBubble('user', answer);
-  conversation.push({role:'user', text:answer});
-  allAnswers.push(answer);
+/* FEEDBACK */
+async function getFeedback(answer,done){
+  var lastQ=(log.filter(function(m){return m.role==='ai'}).slice(-1)[0]||{}).text||'';
+  var msg='You are an interview coach for GAO Tek AI Technical Writing Intern role.\nQUESTION: "'+lastQ+'"\nANSWER: "'+answer+'"\n\nWrite 2 honest sentences: 1) Was it specific, clear, role-relevant? 2) What to improve?\nRate: "good"=specific+role-relevant, "okay"=decent but vague, "needs-work"=too short/unclear/off-topic.\nReturn ONLY valid JSON no markdown: {"rating":"okay","comment":"Sentence 1. Sentence 2."}';
+  var rating='okay',comment='Decent response. Try to be more specific and connect your experience directly to the role tasks.';
+  try{var raw=await api(msg);var d=JSON.parse(raw.replace(/```json|```/g,'').trim());rating=d.rating||rating;comment=d.comment||comment}catch(e){}
+  showFeedback(rating,comment);
+  log[log.length-1].feedback={rating:rating,comment:comment};
+  setTimeout(done,3200);
+}
 
-  const currentQ = qIndex;
-  qIndex++;
-  updateProgress();
+function showFeedback(rating,comment){
+  var labels={good:'✅ Strong Answer',okay:'💡 Good Effort','needs-work':'⚠️ Needs Improvement'};
+  var div=document.createElement('div');
+  div.className='fb '+rating;
+  div.innerHTML='<div class="fb-lbl">'+(labels[rating]||'💡 Feedback')+'</div>'+esc(comment);
+  var s=document.getElementById('chat-scroll');s.appendChild(div);s.scrollTop=s.scrollHeight;
+}
 
-  addTyping();
-  const result = await getCommentAndNext(answer, currentQ);
-  removeTyping();
+/* CLOSE */
+async function closeOut(){
+  var history=log.map(function(m){return(m.role==='ai'?'MS. ADJEI':'CANDIDATE')+': '+m.text}).join('\n\n');
+  var msg='Interview of 5 questions is complete.\nCONVERSATION: '+history+'\nGive a warm closing (2-3 sentences). Thank them. Mention ONE specific thing that stood out. No more questions. Under 60 words. Output only what Ms. Adjei says.';
+  var typing=showTyping();
+  var closing="Thank you so much for your time today — it has been a genuine pleasure. Your combination of AI research tools and hands-on project work really stood out. We will be reviewing applications shortly and will be in touch very soon!";
+  try{closing=await api(msg)}catch(e){}
+  hideTyping(typing);
+  addBubble('ai',closing);log.push({role:'ai',text:closing});
+  speakOrUnlock(closing,function(){
+    setTimeout(function(){
+      document.getElementById('interview-screen').style.display='none';
+      document.getElementById('result-screen').style.display='block';
+      buildScore();
+    },1400);
+  });
+}
 
-  if (result.comment) {
-    addComment(result.comment);
-    await new Promise(r => setTimeout(r, 600));
+/* SCORE */
+async function buildScore(){
+  var answers=log.filter(function(m){return m.role==='user'}).map(function(m,i){return'Answer '+(i+1)+': "'+m.text+'"\nFeedback: ['+(m.feedback&&m.feedback.rating||'okay')+'] '+(m.feedback&&m.feedback.comment||'')}).join('\n\n');
+  var msg='Score this candidate for GAO Tek AI Technical Writing Intern.\n\nANSWERS+FEEDBACK:\n'+answers+'\n\nRate 0-100 on each: Communication Clarity, AI & Tool Knowledge, Research & Writing Experience, Role Fit & Motivation, Specificity & Confidence.\nPlus: overall (0-100), verdict (Excellent Candidate/Strong Candidate/Promising Candidate/Needs More Preparation), 3-sentence personalised feedback referencing specific things they said.\n\nReturn ONLY valid JSON no markdown:\n{"overall":78,"verdict":"Strong Candidate","skills":{"Communication Clarity":80,"AI & Tool Knowledge":82,"Research & Writing Experience":75,"Role Fit & Motivation":78,"Specificity & Confidence":72},"feedback":"3 sentences."}';
+  var d=null;
+  try{var raw=await api(msg);d=JSON.parse(raw.replace(/```json|```/g,'').trim())}catch(e){}
+  if(!d){
+    var rmap={good:85,okay:68,'needs-work':50};
+    var us=log.filter(function(m){return m.role==='user'});
+    var avg=Math.round(us.reduce(function(s,m){return s+(rmap[m.feedback&&m.feedback.rating]||68)},0)/Math.max(us.length,1));
+    d={overall:avg,verdict:avg>=80?'Strong Candidate':avg>=65?'Promising Candidate':'Needs More Preparation',
+       skills:{'Communication Clarity':avg,'AI & Tool Knowledge':avg+4,'Research & Writing Experience':avg-3,'Role Fit & Motivation':avg,'Specificity & Confidence':avg-5},
+       feedback:'You showed real initiative combining AI tools with both research and hands-on development. Your background with the paper and logistics project is a strong foundation for technical writing. Focus on giving more specific detailed examples that directly map to documentation tasks at GAO Tek.'};
   }
-
-  if (qIndex >= 5) {
-    const closing = result.closing || "Thank you so much for your time today — it was genuinely a pleasure speaking with you. We'll be reviewing all candidates and will be in touch shortly.";
-    addBubble('iv', closing);
-    conversation.push({role:'iv', text:closing});
-    speak(closing, () => setTimeout(endInterview, 1400));
-  } else {
-    const nextQ = result.nextQuestion;
-    if (nextQ) {
-      addBubble('iv', nextQ);
-      conversation.push({role:'iv', text:nextQ});
-      speak(nextQ, () => {
-        lockInput(false);
-        setHint('Click 🎙 to speak — or type and press Enter');
-      });
-    }
-  }
+  renderScore(d);
 }
 
-// ── MIC ─────────────────────────────────────────────────
-function toggleMic() {
-  if (!waiting) return;
-  isRecording ? stopMic() : startMic();
-}
-function startMic() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { setHint('Speech not available — please type your answer.','err'); return; }
-  recognition = new SR();
-  recognition.continuous = true; recognition.interimResults = true; recognition.lang='en-US';
-  let final = '';
-  recognition.onstart = () => {
-    isRecording = true;
-    document.getElementById('mic-btn').classList.add('recording');
-    document.getElementById('mic-btn').textContent = '⏹';
-    setHint('🔴 Listening — click ⏹ when finished','on');
-    document.getElementById('txt').placeholder = 'Listening…';
-  };
-  recognition.onresult = e => {
-    let interim = '';
-    for (let i=e.resultIndex;i<e.results.length;i++) {
-      if(e.results[i].isFinal) final += e.results[i][0].transcript+' ';
-      else interim += e.results[i][0].transcript;
-    }
-    document.getElementById('txt').value = final+interim;
-  };
-  recognition.onerror = () => stopMic();
-  recognition.onend   = () => { if(isRecording) stopMic(); };
-  recognition.start();
-}
-function stopMic() {
-  isRecording = false;
-  document.getElementById('mic-btn').classList.remove('recording');
-  document.getElementById('mic-btn').textContent = '🎙';
-  document.getElementById('txt').placeholder = 'Type your answer and press Enter…';
-  if (recognition) recognition.stop();
-  const val = document.getElementById('txt').value.trim();
-  if (val.length > 2) {
-    document.getElementById('txt').value = '';
-    processAnswer(val);
-  } else {
-    setHint('Nothing captured — try again or type your answer','err');
-    lockInput(false);
-  }
-}
-function submitText() {
-  if (!waiting) return;
-  const val = document.getElementById('txt').value.trim();
-  if (!val) return;
-  if (isRecording) { recognition && recognition.stop(); isRecording = false; }
-  document.getElementById('txt').value = '';
-  processAnswer(val);
-}
-
-// ── END ─────────────────────────────────────────────────
-async function endInterview() {
-  synth.cancel();
-  document.getElementById('interview-screen').style.display = 'none';
-  document.getElementById('result-screen').style.display   = 'block';
-  document.getElementById('score-num').textContent = '…';
-  document.getElementById('result-grade').textContent = 'Calculating your score…';
-
-  const score = await generateScore();
-  renderScore(score);
-}
-
-function renderScore(d) {
-  const s = d.overall;
-  const circ = 2*Math.PI*62;
-  const offset = circ - (s/100)*circ;
-  const arc = document.getElementById('ring-fill');
-  arc.style.stroke = s>=75?'#00d4aa':s>=55?'#f0b429':'#ff6b8a';
-
-  setTimeout(()=>{
-    arc.style.strokeDashoffset = offset;
-    let cur=0;
-    const step = setInterval(()=>{
-      cur = Math.min(cur+2,s);
-      document.getElementById('score-num').textContent = cur;
-      if(cur>=s) clearInterval(step);
-    },16);
+function renderScore(d){
+  var score=Math.round(d.overall);
+  var arc=document.getElementById('score-arc');
+  arc.style.stroke=score>=80?'#00d4b4':score>=65?'#ffc94d':'#ff6b8a';
+  setTimeout(function(){
+    arc.style.strokeDashoffset=427-(score/100)*427;
+    var c=0;var t=setInterval(function(){c=Math.min(c+2,score);document.getElementById('snum').textContent=c;if(c>=score)clearInterval(t)},18);
   },200);
-
-  document.getElementById('result-grade').textContent = d.grade||'Candidate Evaluated';
-  document.getElementById('result-note').textContent  = 'Your personalised performance report from Dr. Sarah.';
-  document.getElementById('feedback-body').innerHTML  = (d.feedback||'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
-
-  const bars = document.getElementById('skill-bars');
-  bars.innerHTML='';
-  Object.entries(d.skills||{}).forEach(([lbl,val])=>{
-    const r=document.createElement('div');
-    r.className='bar-row';
-    r.innerHTML=`<label>${lbl}</label>
-      <div class="bar-track"><div class="bar-fill" data-w="${val}%" style="width:0%"></div></div>
-      <span class="bar-pct">${val}%</span>`;
-    bars.appendChild(r);
+  document.getElementById('verdict').textContent=d.verdict||'Good Candidate';
+  document.getElementById('ofb').innerHTML=(d.feedback||'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  var el=document.getElementById('skill-bars');el.innerHTML='';
+  Object.entries(d.skills||{}).forEach(function(e){
+    var row=document.createElement('div');row.className='sbr';
+    row.innerHTML='<span class="sbl">'+e[0]+'</span><div class="sbt"><div class="sbf" style="width:0" data-w="'+e[1]+'%"></div></div><span class="sbp">'+Math.round(e[1])+'%</span>';
+    el.appendChild(row);
   });
-  setTimeout(()=>{
-    bars.querySelectorAll('.bar-fill').forEach(el=>{ el.style.width=el.dataset.w; });
-  },350);
+  setTimeout(function(){el.querySelectorAll('.sbf').forEach(function(x){x.style.width=x.dataset.w})},300);
 }
 
-function restart() {
-  document.getElementById('result-screen').style.display='none';
-  startInterview();
+/* MIC */
+function toggleMic(){if(!awaitInput)return;isRec?stopRec():startRec()}
+function startRec(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){setHint('No speech recognition — please type below.',false);return}
+  recog=new SR();recog.continuous=true;recog.interimResults=true;recog.lang='en-US';
+  var final='';
+  recog.onstart=function(){isRec=true;document.getElementById('mic-btn').classList.add('rec');document.getElementById('mic-btn').textContent='⏹';setHint('🔴 Recording... click ⏹ when done',true);document.getElementById('tin').placeholder='Listening...'};
+  recog.onresult=function(e){var interim='';for(var i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)final+=e.results[i][0].transcript+' ';else interim+=e.results[i][0].transcript}document.getElementById('tin').value=final+interim};
+  recog.onerror=function(){stopRec()};
+  recog.onend=function(){if(isRec)stopRec()};
+  recog.start();
+}
+function stopRec(){
+  isRec=false;document.getElementById('mic-btn').classList.remove('rec');document.getElementById('mic-btn').textContent='🎙';
+  recog&&recog.stop();
+  var val=document.getElementById('tin').value.trim();
+  document.getElementById('tin').value='';document.getElementById('tin').placeholder='Type your answer and press Enter...';
+  if(val.length>3)submitAnswer(val);else setHint('Nothing captured — try again or type below',false);
+}
+function submitTyped(){
+  if(!awaitInput)return;
+  var val=document.getElementById('tin').value.trim();if(!val)return;
+  if(isRec){recog&&recog.stop();isRec=false}
+  document.getElementById('tin').value='';submitAnswer(val);
 }
 
-function seeTranscript() {
-  const lines = conversation.map(m=>
-    `<div style="margin-bottom:14px"><strong style="color:${m.role==='iv'?'#00d4aa':'#f0b429'}">${m.role==='iv'?'Dr. Sarah':'You'}:</strong><br>${esc(m.text)}</div>`
-  ).join('');
-  const w = window.open('','_blank','width=680,height=580');
-  w.document.write(`<html><head><style>body{background:#080b12;color:#dde4f0;font-family:sans-serif;padding:24px;line-height:1.65}strong{font-size:.8rem;letter-spacing:.3px;text-transform:uppercase}</style></head><body>
-    <h2 style="color:#6c8fff;margin-bottom:22px;font-family:serif">Interview Transcript</h2>${lines}</body></html>`);
+/* UI */
+function addBubble(role,text){
+  var s=document.getElementById('chat-scroll');
+  var d=document.createElement('div');d.className='brow'+(role==='user'?' user':'');
+  d.innerHTML='<div class="bav '+role+'">'+(role==='ai'?'AA':'You')+'</div><div class="bubble '+role+'">'+esc(text)+'</div>';
+  s.appendChild(d);s.scrollTop=s.scrollHeight;
+}
+function showTyping(){
+  var s=document.getElementById('chat-scroll');var d=document.createElement('div');
+  d.className='brow';d.id='typing-ind';
+  d.innerHTML='<div class="bav ai">AA</div><div class="bubble ai"><div class="dots"><span></span><span></span><span></span></div></div>';
+  s.appendChild(d);s.scrollTop=s.scrollHeight;return d;
+}
+function hideTyping(el){try{el.remove()}catch(e){}}
+function lockInput(lock){awaitInput=!lock;document.getElementById('input-zone').classList.toggle('locked',lock);if(!lock)setHint('Click 🎙 to speak — or type and press Enter',false)}
+function setSt(msg,cls){var el=document.getElementById('av-st');el.textContent=msg;el.className='av-st '+cls}
+function setHint(msg,on){var el=document.getElementById('hint');el.textContent=msg;el.className='hint'+(on?' on':'')}
+function updateProg(){document.getElementById('prog-fill').style.width=(qIdx/TOTAL*100)+'%';document.getElementById('q-badge').textContent='Q '+Math.min(qIdx+1,TOTAL)+' / '+TOTAL}
+function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}
+
+var FALLBACKS=[
+  "Good morning! I'm Ama Adjei, HR Talent Lead at GAO Tek. It's great to meet you! To start — could you tell me a bit about yourself: your background, what you study, and what drew you to AI and technical writing?",
+  "That gives me a good picture. You mentioned your research work — can you walk me through how AI tools like Elicit or SciSpace actually fit into that process?",
+  "Really interesting. Which of those AI research tools made the biggest difference, and what specific task did it solve that would have been hard to do manually?",
+  "Great — you also built a logistics tracking system. Can you describe what it does, who would use it, and what you learned about structuring information through that project?",
+  "Thinking about GAO Tek products — technical datasheets, user guides, reports — how does your experience prepare you to handle that kind of content from day one?"
+];
+
+function restart(){window.speechSynthesis&&speechSynthesis.cancel();document.getElementById('result-screen').style.display='none';document.getElementById('start-screen').style.display='flex';showReplay(false)}
+function showTranscript(){
+  var html=log.map(function(m){
+    var lbl=m.role==='ai'?'Ms. Adjei':'You';var color=m.role==='ai'?'#00d4b4':'#ffc94d';
+    var out='<div style="margin-bottom:11px"><strong style="color:'+color+';font-size:.75rem;text-transform:uppercase;letter-spacing:.5px">'+lbl+'</strong><br>'+esc(m.text)+'</div>';
+    if(m.feedback){var fc={good:'#00d4b4',okay:'#ffc94d','needs-work':'#ff6b8a'}[m.feedback.rating]||'#888';out+='<div style="margin:-4px 0 15px;padding:7px 11px;border-left:3px solid '+fc+';background:rgba(0,0,0,.3);font-size:.76rem;color:'+fc+'">'+esc(m.feedback.comment)+'</div>'}
+    return out;
+  }).join('');
+  var w=window.open('','_blank','width=660,height=600');
+  w.document.write('<!DOCTYPE html><html><head><style>body{background:#0a0c12;color:#e4e8f4;font-family:sans-serif;padding:26px;line-height:1.65;font-size:.88rem}h2{color:#7b6fff;margin-bottom:20px;font-size:1rem}</style></head><body><h2>Interview Transcript</h2>'+html+'</body></html>');
 }
 </script>
 </body>
